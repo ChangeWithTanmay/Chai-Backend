@@ -57,7 +57,7 @@ userSchema.pre("save", async function (next) {
   // If case nevr chenge Password, than go Next.
   if (!this.isModified("password")) return next();
   // When the chenge password than -> Password Convert Bcrypt from. And Store DataBase.
-  this.password = bcrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
