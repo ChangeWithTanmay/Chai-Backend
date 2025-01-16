@@ -27,10 +27,11 @@ const registerUser = asyncHandeler(async (req, res) => {
 
 const registerUser = asyncHandeler(async (req, res) => {
 
+  
   // 1#. Get User detils from Front-end.
 
   const { fullName, email, username, password } = req.body;
-  console.log("email:", email);
+  // console.log("email:", email);
 
   // 2#. Validation - not empty
 
@@ -46,18 +47,25 @@ const registerUser = asyncHandeler(async (req, res) => {
 
   // 3#. check if user already exists: username, email
 
-  const existUser = User.findOne({
+  const existUser = await User.findOne({
     $or: [{ username }, { email }],
   });
 
   if (existUser) {
     throw new ApiError(409, "User with email and username already exists");
   }
+  // console.log(req.files)
 
   // 4#. Check for images, check for avatar
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+  // Here coverImage is Not Comeing, than came error.  Next three line is solve this problem.
+  let coverImageLocalPath;
+  if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length >0){
+    coverImageLocalPath = req.files?.coverImage[0]?.path;
+  }
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar image is required");

@@ -1,10 +1,12 @@
+
 import multer from "multer";
+
 
 //  multer diskStorage copy code
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     // cb call back
-    cb(null, "/public/tem");
+    cb(null, "./public/temp");
     // '/public/tem' which address store file.
   },
   filename: function (req, file, cb) {
