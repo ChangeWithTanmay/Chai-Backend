@@ -13,21 +13,49 @@ const registerUser = asyncHandeler(async (req, res) => {
   */
 
 
+// # AccessToken and RefreshToken method
+const generateAccessAndRefreshTokens = async (userId) => {
+  try {
+    // Use -> Jwt
+    // Step 1: Database থেকে user খুঁজে বের করা
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(404, "User not found"); // যদি user না থাকে
+    }
+
+    // Step 2: Access token এবং refresh token তৈরি করা
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    // Step 3: Refresh token database-এ save করা
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    // Step 4: Tokens return করা
+    return { accessToken, refreshToken };
+
+
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Something went wrong while generating referesh and access token"
+    );
+  }
+};
+
 // #Register User Steps
 
-// 1. Get User detils from Frontend | Postman
-// 2. Validation - not empty
-// 3. check if user already exists: username, email
-// 4. Check for images, check for avatar
-// 5. Upload Image Cloudinary, avatar
-// 6. Create user object - create entry in db(MongoDB No-sql)
-// 7. Remove password and refresh token field from responce.
-// 8. Check for user creation.
-// 9. return Responce(res).
-
 const registerUser = asyncHandeler(async (req, res) => {
+  // 1. Get User detils from Frontend | Postman
+  // 2. Validation - not empty
+  // 3. check if user already exists: username, email
+  // 4. Check for images, check for avatar
+  // 5. Upload Image Cloudinary, avatar
+  // 6. Create user object - create entry in db(MongoDB No-sql)
+  // 7. Remove password and refresh token field from responce.
+  // 8. Check for user creation.
+  // 9. return Responce(res).
 
-  
   // 1#. Get User detils from Front-end.
 
   const { fullName, email, username, password } = req.body;
@@ -63,7 +91,11 @@ const registerUser = asyncHandeler(async (req, res) => {
 
   // Here coverImage is Not Comeing, than came error.  Next three line is solve this problem.
   let coverImageLocalPath;
-  if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length >0){
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
     coverImageLocalPath = req.files?.coverImage[0]?.path;
   }
 
@@ -110,4 +142,107 @@ const registerUser = asyncHandeler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User Register Successfully"));
 });
 
-export { registerUser };
+// << Login User >>
+
+const loginUser = asyncHandeler(async (req, res) => {
+  // TO-DO
+  // req body -> data (req body sai Data ley ayo.)
+  // username or  email nahi aya too error vajo.
+  // username or email -> login
+  // find the user.
+  // password check.
+  // Access and referesh Token -> user
+  // Send cookie.
+
+  // 1#. req body -> data (req body sai Data ley ayo.)
+  const { email, username, password } = req.body;
+
+  // 2#. username or  email nahi aya too error vajo.
+  if (!email || !username) {
+    throw new ApiError(400, "username & email is required.");
+  }
+  // 3#. username or email -> login
+  const user = await User.findOne({
+    // findOne is mongoDB finction.
+    $or: [{ username }, { email }],
+  });
+
+  if (!user) {
+    throw new ApiError(404, "User does not exist");
+  }
+
+  // 4#. Password is check
+  const isPasswordValid = await user.isPasswordCorrect(password);
+
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Invalid user credentials");
+  }
+
+  // 5#. Access and referesh Token -> user
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id)
+
+  // 6#. Send cookie.
+  // Filter which Data, User not return.
+  // Far sai DataBase mai call kaiya hai. But eish ko update karka-bhi kam ho sakta hai.
+  const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+
+  // sending cookies.
+  const options = {
+    httpOnly: true,
+    secure: true
+    // kya farak parta hai: eish cookie ko, Front-end sai koivi chenge nahi karsakta. only chenge for back-end. Dakh sakta but modify nahi karsakta.
+  }
+
+  return res
+  .status(200)
+  .cookie("accessToken",accessToken, options)
+  .cookie("refreshToken", refreshToken, options)
+  .json(
+    new ApiResponse(
+      200,
+      {
+        user: loggedInUser, accessToken, refreshToken
+      },
+      "User logged in Successfully"
+    )
+  )
+
+});
+
+// # LogOutUser
+const logoutUser = asyncHandeler(async(req,res)=>{
+  // cookie -> clear
+  // refreshToken -> reset
+  // own Middleware
+  await User.findByIdAndUpdate(
+    req.user._id, // DataBase to find -> user id
+    {
+       $set: {
+          refreshToken: undefined
+       }
+       // kaya kaya update karna hai
+    },
+    {
+      new: true
+      // return new updated value
+    }
+  )
+// 2#. cookie -> clear
+  const options = {
+    httpOnly: true,
+    secure: true
+    // kya farak parta hai: eish cookie ko, Front-end sai koivi chenge nahi karsakta. only chenge for back-end. Dakh sakta but modify nahi karsakta.
+  }
+
+  return res
+  .status(200)
+  .clearCookie("accessToken", options)
+  .clearCookie("refreshToken")
+  .json(new ApiResponse(200, {}, "User logged Out"))
+})
+
+export { 
+  registerUser, 
+  loginUser,
+  logoutUser,
+};
