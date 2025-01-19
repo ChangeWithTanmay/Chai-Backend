@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken"
 
 /*
 const registerUser = asyncHandeler(async (req, res) => {
@@ -43,7 +44,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
   }
 };
 
-// #Register User Steps
+// # << Register User Steps >>
 
 const registerUser = asyncHandeler(async (req, res) => {
   // 1. Get User detils from Frontend | Postman
@@ -142,7 +143,7 @@ const registerUser = asyncHandeler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User Register Successfully"));
 });
 
-// << Login User >>
+// # << Login User >>
 
 const loginUser = asyncHandeler(async (req, res) => {
   // TO-DO
@@ -221,7 +222,8 @@ const loginUser = asyncHandeler(async (req, res) => {
 
 });
 
-// # LogOutUser
+// # << LogOutUser >>
+
 const logoutUser = asyncHandeler(async(req,res)=>{
   // cookie -> clear
   // refreshToken -> reset
@@ -253,8 +255,77 @@ const logoutUser = asyncHandeler(async(req,res)=>{
   .json(new ApiResponse(200, {}, "User logged Out"))
 })
 
+
+// # << Refresh Token >>
+
+const refereshAccessToken = asyncHandeler(async(req, res)=>{
+  // Todo
+  // 1. Cookie -> find Access Refresh Token || Body -> find Access Token(Mobile app).
+  // 2. check incomeing cookie is coming is not.
+  // 3. Refresh token varifying -> jwt. decodedToken form.
+  // 4. MongoDb to Access user Detials.
+
+  // 1#. Cookie -> find Access Refresh Token || Body -> find Access Token(Mobile app).
+  const incomingRefreshToken  = req.cookies.refreshToken || req.body.refreshToken;
+
+   // 2#. check incomeing cookie is coming is not.
+  if(!incomingRefreshToken) {
+    throw new ApiError(401, "Unathorized Request");
+  }
+
+  // 3#. Refresh token varifying -> jwt. decodedToken form.
+  try {
+    const decodedToken = jwt.verify(
+      incomingRefreshToken, 
+      process.env.REFRESH_TOKEN_SECRCT
+    )
+  
+    // When Created refreshToken finction "../models/user.model.js". I am only return "_id: this._id" value. 
+    // Useing _id esily access user all detils.
+  
+    // 4#. MongoDb to Access user Detials.
+    const user = await User.findById(decodedToken?._id);
+  
+    // 5#. Never have User _id. Pass error message 
+    if(!user) {
+      throw new ApiError(401, "Invalid Refresh token");
+    }
+  
+    // 6#. Maching User refreshToken and incomeingRefreshToken.
+    if(incomingRefreshToken !== user?.refreshToken) {
+      throw new ApiError(401, "Refresh token is expired or used")
+  
+    } 
+  
+    // 7#. Genarate Access token and This token save in Database.
+    const {newAccessToken, newRefreshToken} = await generateAccessAndRefreshTokens(user._id)
+  
+    // 8#. Set Options.
+  
+    const options ={
+      httpOnly: true,
+      secure: true
+    }
+  
+    // 9# Send Res 
+    return res
+    .cookie("accessToken", newAccessToken, options)
+    .cookie("refreshToken", newRefreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {accessToken: newAccessToken, refreshToken: newRefreshToken},
+        "Access token refreshed"
+      )
+    )
+  } catch (error) {
+    throw new ApiError(401, error?.message || "Invalid refresh token")
+  }
+})
+
 export { 
   registerUser, 
   loginUser,
   logoutUser,
+  refereshAccessToken,
 };
