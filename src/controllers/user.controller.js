@@ -156,11 +156,20 @@ const loginUser = asyncHandeler(async (req, res) => {
 
   // 1#. req body -> data (req body sai Data ley ayo.)
   const { email, username, password } = req.body;
+  console.log(email);
+
 
   // 2#. username or  email nahi aya too error vajo.
-  if (!email || !username) {
+  if (!email && !username) {
     throw new ApiError(400, "username & email is required.");
   }
+
+  // Here is an alternative of above code based on login discuss.
+  // if (!(email || username)) {
+  //   throw new ApiError(400, "username & email is required.");
+  // }
+
+
   // 3#. username or email -> login
   const user = await User.findOne({
     // findOne is mongoDB finction.
@@ -193,19 +202,22 @@ const loginUser = asyncHandeler(async (req, res) => {
     // kya farak parta hai: eish cookie ko, Front-end sai koivi chenge nahi karsakta. only chenge for back-end. Dakh sakta but modify nahi karsakta.
   }
 
+  console.log(options);
+
   return res
   .status(200)
-  .cookie("accessToken",accessToken, options)
+  .cookie("accessToken", accessToken, options)
   .cookie("refreshToken", refreshToken, options)
   .json(
-    new ApiResponse(
-      200,
-      {
-        user: loggedInUser, accessToken, refreshToken
-      },
-      "User logged in Successfully"
-    )
+      new ApiResponse(
+          200, 
+          {
+              user: loggedInUser, accessToken, refreshToken
+          },
+          "User logged In Successfully"
+      )
   )
+
 
 });
 
