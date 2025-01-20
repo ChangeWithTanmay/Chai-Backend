@@ -33,6 +33,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
     await user.save({ validateBeforeSave: false });
 
     // Step 4: Tokens return করা
+
     return { accessToken, refreshToken };
 
 
@@ -258,7 +259,7 @@ const logoutUser = asyncHandeler(async(req,res)=>{
 
 // # << Refresh Token >>
 
-const refereshAccessToken = asyncHandeler(async(req, res)=>{
+const refereshAccessToken = asyncHandeler(async (req, res) =>{
   // Todo
   // 1. Cookie -> find Access Refresh Token || Body -> find Access Token(Mobile app).
   // 2. check incomeing cookie is coming is not.
@@ -267,65 +268,82 @@ const refereshAccessToken = asyncHandeler(async(req, res)=>{
 
   // 1#. Cookie -> find Access Refresh Token || Body -> find Access Token(Mobile app).
   const incomingRefreshToken  = req.cookies.refreshToken || req.body.refreshToken;
+  console.log("incomingRefreshToken:",incomingRefreshToken);
 
-   // 2#. check incomeing cookie is coming is not.
+  // 2#. check incomeing cookie is coming is not.
   if(!incomingRefreshToken) {
     throw new ApiError(401, "Unathorized Request");
   }
 
-  // 3#. Refresh token varifying -> jwt. decodedToken form.
+  // 3#. Use Try and catch -> using try and catch.
   try {
+
+    // 4#. Token is varify -> jwt. decodedToken form.
     const decodedToken = jwt.verify(
       incomingRefreshToken, 
       process.env.REFRESH_TOKEN_SECRCT
     )
-  
+
+    if(!decodedToken){
+      throw new ApiError(403, "Refresh token mismatch. Please log in again.");
+    }
+    // console.log("DecodedToken",decodedToken);
+
     // When Created refreshToken finction "../models/user.model.js". I am only return "_id: this._id" value. 
     // Useing _id esily access user all detils.
   
-    // 4#. MongoDb to Access user Detials.
+    // 5#. MongoDb to Access user Detials.
     const user = await User.findById(decodedToken?._id);
-  
-    // 5#. Never have User _id. Pass error message 
-    if(!user) {
+
+    if (!user){
       throw new ApiError(401, "Invalid Refresh token");
     }
-  
+
+
     // 6#. Maching User refreshToken and incomeingRefreshToken.
-    if(incomingRefreshToken !== user?.refreshToken) {
+    if(incomingRefreshToken !== user?.refreshToken){
       throw new ApiError(401, "Refresh token is expired or used")
-  
-    } 
-  
+    }
+
     // 7#. Genarate Access token and This token save in Database.
-    const {newAccessToken, newRefreshToken} = await generateAccessAndRefreshTokens(user._id)
-  
+    // console.log("User id:", user?._id)
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+    
+
     // 8#. Set Options.
   
     const options ={
       httpOnly: true,
       secure: true
     }
-  
-    // 9# Send Res 
+
     return res
-    .cookie("accessToken", newAccessToken, options)
-    .cookie("refreshToken", newRefreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
     .json(
       new ApiResponse(
         200,
-        {accessToken: newAccessToken, refreshToken: newRefreshToken},
+        {
+          accessToken: accessToken, 
+          refreshToken: refreshToken
+        },
         "Access token refreshed"
       )
     )
+
   } catch (error) {
-    throw new ApiError(401, error?.message || "Invalid refresh token")
+    throw new ApiError(401, error?.message || "Invalid Refresh token");
   }
+
+
+  
 })
+
 
 export { 
   registerUser, 
   loginUser,
   logoutUser,
-  refereshAccessToken,
+  refereshAccessToken
 };

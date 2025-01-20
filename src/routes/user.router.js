@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {registerUser, loginUser, logoutUser, refereshAccessToken} from "../controllers/user.controller.js";
+import { registerUser, loginUser, logoutUser, refereshAccessToken } from "../controllers/user.controller.js";
 import {upload} from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -30,7 +30,7 @@ router.route("/refresh-token").post(refereshAccessToken)
 
 
 // https://youtu.be/7fjOw8ApZ1I?t=32298
-// https://youtu.be/7fjOw8ApZ1I?t=32298
+// https://youtu.be/8k-kK3tsJFY?t=5571
 
 
 export default router;
