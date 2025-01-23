@@ -450,7 +450,13 @@ const updateUserAvatar = asyncHandeler(async(req, res) =>{
 
   return res
   .status(200)
-  .json(new ApiResponse(200, user ,"Avater Updated successfully."))
+  .json(new ApiResponse(
+    200, 
+    {
+      user: user, deleteImageUrl
+    },
+    "Avater Updated successfully."
+  ))
 
 })
 
@@ -492,7 +498,12 @@ const updateUserCoverImage = asyncHandeler(async(req, res) =>{
 
   return res
   .status(200)
-  .json(new ApiResponse(200, user, "Cover Image Updated successfully."))
+  .json(new ApiResponse(
+    200, 
+    {
+      user: user, deletedCoverImage: deleteImageUrl
+    }, 
+    "Cover Image Updated successfully."))
 
 })
 
@@ -506,5 +517,5 @@ export {
   updateAccountDetails,
   updateUserAvatar,
   updateUserCoverImage,
-  
+
 };
