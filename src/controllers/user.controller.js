@@ -1,7 +1,7 @@
 import { asyncHandeler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
 
@@ -340,7 +340,7 @@ const refereshAccessToken = asyncHandeler(async (req, res) => {
 
 })
 
-
+// ## CHENGE PASSWORD
 
 const changeCurrentPassword = asyncHandeler(async (req, res) => {
   // 1#. req.body to recive new & old password.
@@ -371,11 +371,16 @@ const changeCurrentPassword = asyncHandeler(async (req, res) => {
   .json(new ApiResponse(200,"Password chenge successfully"));
 });
 
+// ## GET CURRENT USER
+
 const getCurrentUser = asyncHandeler(async(req, res) =>{
   return res
   .status(200)
   .json(200, req.user, "Current user fatched successfully")
 })
+
+
+// ## UPDATE ACCOUNT DETAILS
 
 const updateAccountDetails = asyncHandeler(async (req, res) => {
   const { email,fullName} = req.body;
@@ -387,7 +392,7 @@ const updateAccountDetails = asyncHandeler(async (req, res) => {
   console.log(fullName);
   console.log(req.user?._id)
 
-  const user = User.findByIdAndUpdate(
+  const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set:{
@@ -404,18 +409,25 @@ const updateAccountDetails = asyncHandeler(async (req, res) => {
 });
 
 
+// ## UPDATE AVATAR
 const updateUserAvatar = asyncHandeler(async(req, res) =>{
+  // 1.# req to find Local path.
   const avatarLocalPath = req.file?.path;
 
+  // 2# Avatar is comming and Not.
   if(!avatarLocalPath){
     throw new ApiError(400, "Avater file is missing");
   }
-
+  // 3# New Avatar Image -> Upload in cloudinary 
   const avatar = await uploadOnCloudinary(avatarLocalPath);
   if(!avatar.url){
     throw new ApiError(400, "Error while uploading on avatar")
   }
+  // 4# Database(Schema) User to find `_id`
+  const loggedInUser = await User.findById(user._id);
 
+
+  // 6#  New Avater Update in Database.
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
@@ -427,6 +439,14 @@ const updateUserAvatar = asyncHandeler(async(req, res) =>{
       new: true
     }
   ).select("-password")
+  // select("-password") -> means with-out password. Data Save. 
+
+    // 5# Privious Avatar Delete in Cloudinary.
+    const deleteImageUrl = await deleteOnCloudinary(loggedInUser.avatar);
+
+    if(!deleteImageUrl){
+      throw new ApiError(500, "ailed to delete the image due to a server error. Please try again later.")
+    }
 
   return res
   .status(200)
@@ -447,6 +467,10 @@ const updateUserCoverImage = asyncHandeler(async(req, res) =>{
     throw new ApiError(400, "Error while uploading on cover Image")
   }
 
+    // 4# Database(Schema) User to find `_id`
+    const loggedInUser = await User.findById(user?._id);
+
+
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
@@ -459,9 +483,16 @@ const updateUserCoverImage = asyncHandeler(async(req, res) =>{
     }
   ).select("-password")
 
+    // 5# Privious Avatar Delete in Cloudinary.
+    const deleteImageUrl = await deleteOnCloudinary(loggedInUser?.coverImage);
+
+    if(!deleteImageUrl){
+      throw new ApiError(500, "ailed to delete the image due to a server error. Please try again later.")
+    }
+
   return res
   .status(200)
-  .json(new ApiResponse(200, user ,"Cover Image Updated successfully."))
+  .json(new ApiResponse(200, user, "Cover Image Updated successfully."))
 
 })
 
@@ -474,5 +505,6 @@ export {
   getCurrentUser,
   updateAccountDetails,
   updateUserAvatar,
-  updateUserCoverImage
+  updateUserCoverImage,
+  
 };
