@@ -383,7 +383,16 @@ const getCurrentUser = asyncHandeler(async(req, res) =>{
 // ## UPDATE ACCOUNT DETAILS
 
 const updateAccountDetails = asyncHandeler(async (req, res) => {
-  const { email,fullName} = req.body;
+  // TODO
+  // 1. CHECK USER LOGING OR NOT.
+  // 2. DATA COLLECT IN FORM.
+  // 3. CHECK DATA COME OR NOT.
+  // 4. USER FIND AND UPDATE IN DATABASE, USEING (user._id).
+  // 5. SET DATA: WHICH DATA ARE UPDATE.
+  // 6. SET DATA: WHICH DATA ARE NOT SELECTED.
+  // 7. CHECK UPDATE SUCCESSFULLY OR NOT.
+  // 8. RETURN RESPONSE IN JSON FORMATE.
+  const { email, fullName} = req.body;
   console.log(email);
 
   if(!fullName || !email){
@@ -403,9 +412,13 @@ const updateAccountDetails = asyncHandeler(async (req, res) => {
     {new: true}
   ).select("-password")
   // using select -> don't select password fiels মানে শুধু password বাদ দেওয়া।  
+
+  if(user){
+    throw new ApiError(503, "User detials no Update successfully, Please Re-try..");
+  }
   return res
   .status(200)
-  .json(new ApiResponse(200, user, "Accunt details updated successfully."))
+  .json(new ApiResponse(200, user, "Accunt details updated successfully."));
 });
 
 
@@ -460,7 +473,7 @@ const updateUserAvatar = asyncHandeler(async(req, res) =>{
 
 })
 
-
+// ## UPDATE COVER IMAGE
 const updateUserCoverImage = asyncHandeler(async(req, res) =>{
   const coverImageLocalPath = req.file?.path;
 
@@ -505,7 +518,8 @@ const updateUserCoverImage = asyncHandeler(async(req, res) =>{
     }, 
     "Cover Image Updated successfully."))
 
-})
+});
+
 
 export {
   registerUser,
