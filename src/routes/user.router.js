@@ -7,7 +7,12 @@ import {
     logoutUser, 
     refereshAccessToken,
     changeCurrentPassword, 
-    updateAccountDetails
+    getCurrentUser,
+    updateAccountDetails,
+    updateUserAvatar,
+    updateUserCoverImage,
+    getUserChannelProfile,
+    getWatchHistory,
 } from "../controllers/user.controller.js";
 
 const router = Router();
@@ -30,16 +35,28 @@ router.route("/login").post(loginUser)
 
 // Secured routes
 
+// only verify person, can change & access. That is reasion. I am use "varifyJWT"
 router.route("/logout").post(verifyJWT, logoutUser)
 // Refresh Access Token
 router.route("/refresh-token").post(refereshAccessToken)
 
-router.route("/change-password").post(changeCurrentPassword);
-router.route("/username-update").post(updateAccountDetails);
+router.route("/change-password").post(verifyJWT, changeCurrentPassword);
+router.route("/username-update").post(verifyJWT,updateAccountDetails);
 
+router.route("/current-user").get(verifyJWT,  getCurrentUser);
 
-// https://youtu.be/7fjOw8ApZ1I?t=32298
-// https://youtu.be/8k-kK3tsJFY?t=5571
+router.route("/update-account-details").patch(verifyJWT,  updateAccountDetails);
 
+// UPLOAD COME FOR MULTER MIDDLE-WARE, THAT IS REASION. I AM USE UPLOAD. upload.single -> means upload only a single image.
+router.route("/avatar").patch(verifyJWT, upload.single("avatar"), updateUserAvatar);
+
+router.route("/cover-mage").patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage);
+
+// Here username is important, beacuse /channel/wow.contai
+router.route("/chanel/:username").get(verifyJWT,  getUserChannelProfile);
+
+router.route("/history").get(verifyJWT,  getWatchHistory);
+
+router.route()
 
 export default router;
