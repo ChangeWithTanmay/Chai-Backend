@@ -662,7 +662,7 @@ const getWatchHistory = asyncHandeler(async (req, res) => {
   return res
   .status(200)
   .json(
-    new ApiResponse(200, user[0].watchHistory, "watch history fatch succssfully");
+    new ApiResponse(200, user[0].watchHistory, "watch history fatch succssfully")
   )
 });
 
