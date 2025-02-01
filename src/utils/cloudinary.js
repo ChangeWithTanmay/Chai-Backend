@@ -45,6 +45,7 @@ export {uploadOnCloudinary}
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import { ApiError } from "./ApiError.js"
+import dotenv from "dotenv";
 
 
 // Configuration
@@ -83,7 +84,7 @@ const findPublicUrl = async(link) =>{
   try {
     const v1Link = link.split('/');
     const v2Link = v1Link[v1Link.length-1];
-    const url = v2Link.split('?')[0];
+    const url = v2Link.split(/\?|\+|\$|\./)[0];
     console.log("Find By Public Url",url);
     // url=url.toString();
     return url

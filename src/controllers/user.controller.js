@@ -377,7 +377,7 @@ const changeCurrentPassword = asyncHandeler(async (req, res) => {
 const getCurrentUser = asyncHandeler(async (req, res) => {
   return res
     .status(200)
-    .json(200, req.user, "Current user fatched successfully")
+    .json(200, new ApiResponse(200,req.user, "Current user fatched successfully"))
 })
 
 
@@ -414,9 +414,10 @@ const updateAccountDetails = asyncHandeler(async (req, res) => {
   ).select("-password")
   // using select -> don't select password fiels মানে শুধু password বাদ দেওয়া।  
 
-  if (user) {
+  if (!user) {
     throw new ApiError(503, "User detials no Update successfully, Please Re-try..");
   }
+
   return res
     .status(200)
     .json(new ApiResponse(200, user, "Accunt details updated successfully."));
@@ -432,14 +433,15 @@ const updateUserAvatar = asyncHandeler(async (req, res) => {
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avater file is missing");
   }
+  
   // 3# New Avatar Image -> Upload in cloudinary 
   const avatar = await uploadOnCloudinary(avatarLocalPath);
   if (!avatar.url) {
     throw new ApiError(400, "Error while uploading on avatar")
   }
   // 4# Database(Schema) User to find `_id`
-  const loggedInUser = await User.findById(user._id);
-
+  const oldAvater = req.user.avatar;
+  console.log(oldAvater);
 
   // 6#  New Avater Update in Database.
   const user = await User.findByIdAndUpdate(
@@ -456,10 +458,10 @@ const updateUserAvatar = asyncHandeler(async (req, res) => {
   // select("-password") -> means with-out password. Data Save. 
 
   // 5# Privious Avatar Delete in Cloudinary.
-  const deleteImageUrl = await deleteOnCloudinary(loggedInUser.avatar);
+  const deleteImageUrl = await deleteOnCloudinary(oldAvater);
 
   if (!deleteImageUrl) {
-    throw new ApiError(500, "ailed to delete the image due to a server error. Please try again later.")
+    throw new ApiError(500, "Ailed to delete the image due to a server error. Please try again later.")
   }
 
   return res
@@ -467,9 +469,9 @@ const updateUserAvatar = asyncHandeler(async (req, res) => {
     .json(new ApiResponse(
       200,
       {
-        user: user, deleteImageUrl
+        user: user, deleteImageUrl: oldAvater
       },
-      "Avater Updated successfully."
+      "Avater Updated successfully, Old Avater deleted successfully."
     ))
 
 })
@@ -488,7 +490,7 @@ const updateUserCoverImage = asyncHandeler(async (req, res) => {
   }
 
   // 4# Database(Schema) User to find `_id`
-  const loggedInUser = await User.findById(user?._id);
+  const oldCoverImage = req.user.coverImage;
 
 
   const user = await User.findByIdAndUpdate(
@@ -504,10 +506,10 @@ const updateUserCoverImage = asyncHandeler(async (req, res) => {
   ).select("-password")
 
   // 5# Privious Avatar Delete in Cloudinary.
-  const deleteImageUrl = await deleteOnCloudinary(loggedInUser?.coverImage);
+  const deleteImageUrl = await deleteOnCloudinary(oldCoverImage);
 
   if (!deleteImageUrl) {
-    throw new ApiError(500, "ailed to delete the image due to a server error. Please try again later.")
+    throw new ApiError(500, "Ailed to delete the image due to a server error. Please try again later.")
   }
 
   return res
@@ -515,7 +517,7 @@ const updateUserCoverImage = asyncHandeler(async (req, res) => {
     .json(new ApiResponse(
       200,
       {
-        user: user, deletedCoverImage: deleteImageUrl
+        user: user, deletedCoverImage: oldCoverImage
       },
       "Cover Image Updated successfully."))
 
@@ -524,6 +526,7 @@ const updateUserCoverImage = asyncHandeler(async (req, res) => {
 // GET USER CHANNEL PROFILE
 const getUserChannelProfile = asyncHandeler(async (req, res) => {
   const { username } = req.body;
+console.log("username:", username?.trim());
 
   if (!username?.trim()) {
     throw new ApiError(400, "Username is missing");
