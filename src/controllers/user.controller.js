@@ -3,16 +3,9 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
-/*
-const registerUser = asyncHandeler(async (req, res) => {
- return res.status(200).json({
-    message: "Appy",
-    });
-  });
-  */
 
 
 // # AccessToken and RefreshToken method
