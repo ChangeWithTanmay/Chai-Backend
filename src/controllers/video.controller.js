@@ -7,6 +7,8 @@ import {
     deleteOnCloudinary
 } from "../utils/cloudinary.js";
 import { Video } from "../models/video.model.js";
+import mongoose, { isValidObjectId } from "mongoose";
+
 
 
 // # << PUBLISH A VIDEO >>
@@ -221,10 +223,70 @@ const deleteVideo = asyncHandeler(async (req, res) => {
 });
 
 
+// # Video Public &  Private.
+const togglePublishStatus = asyncHandeler(async (req, res) => {
+    
+    const { videoId } = req.params;
+    if (!videoId) {
+        throw new ApiError(503, "Invalid User Id")
+    }
+
+    if (!isValidObjectId(videoId)) {
+        throw new Error("Invalid video ID");
+    }
+
+    const video = await Video.findById(videoId);
+    // check user and owner same or not.
+    if (video?.owner.toString() !== req.user?._id.toString()) {
+        throw new ApiError(403, "You are not authorized to update this video || User Authntication problem")
+    }
+
+    // Change Touggle
+    // video.isPublished = !video.isPublished;
+
+    const updateVideo = await Video.findByIdAndUpdate(
+        videoId,
+        {
+            $set: {
+                isPublished: !video.isPublished
+            }
+        },
+
+        { new: true }
+    )
+    if(!updateVideo){
+        throw new ApiError(503,"Internal Server Error || video Public Not Successfully");
+        
+    }
+    // View Video status
+    const videoStatus = await Video.aggregate([
+        {
+            $match: {
+                _id:new mongoose.Types.ObjectId(video._id)
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                isPublished: 1,
+                status: { $cond: { if: "$isPublished", then: "Public", else: "Private" } }
+            }
+        }
+    ])
+
+    // res  -> return
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {
+            videoStatus
+        }, "Toggle Updated Successfully.."))
+
+})
 
 export {
     publishAVideo,
     getVideoById,
     updateVideo,
     deleteVideo,
+    togglePublishStatus,
 }
