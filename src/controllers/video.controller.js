@@ -11,6 +11,38 @@ import mongoose, { isValidObjectId } from "mongoose";
 
 
 
+// # <<get All video>>
+
+const getAllVideos = asyncHandeler(async (req, res) => {
+    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
+    //TODO: get all videos based on query, sort, pagination
+
+    const totalVideo = await Video.countDocuments();
+    const totalPage = Math.ceil(totalVideo / limit);
+
+    if (page > totalPage) {
+        throw new ApiError(404, "Page Not Found")
+    }
+
+    const videos = await Video.find()
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .exec();
+
+    if (!videos) {
+        throw new ApiError(500, "Videos is not comming.");
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200,
+                { videos, page, totalPage },
+                "Find videos successfully"
+            )
+        )
+})
+
 // # << PUBLISH A VIDEO >>
 
 const publishAVideo = asyncHandeler(async (req, res) => {
@@ -225,7 +257,7 @@ const deleteVideo = asyncHandeler(async (req, res) => {
 
 // # Video Public &  Private.
 const togglePublishStatus = asyncHandeler(async (req, res) => {
-    
+
     const { videoId } = req.params;
     if (!videoId) {
         throw new ApiError(503, "Invalid User Id")
@@ -254,15 +286,15 @@ const togglePublishStatus = asyncHandeler(async (req, res) => {
 
         { new: true }
     )
-    if(!updateVideo){
-        throw new ApiError(503,"Internal Server Error || video Public Not Successfully");
-        
+    if (!updateVideo) {
+        throw new ApiError(503, "Internal Server Error || video Public Not Successfully");
+
     }
     // View Video status
     const videoStatus = await Video.aggregate([
         {
             $match: {
-                _id:new mongoose.Types.ObjectId(video._id)
+                _id: new mongoose.Types.ObjectId(video._id)
             }
         },
         {
@@ -289,4 +321,5 @@ export {
     updateVideo,
     deleteVideo,
     togglePublishStatus,
+    getAllVideos,
 }
