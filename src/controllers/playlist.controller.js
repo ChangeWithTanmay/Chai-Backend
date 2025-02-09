@@ -17,11 +17,11 @@ const creatPlayList = asyncHandeler(async (req, res) => {
     if ([name, description].some((field) => field.trim() === "")) {
         throw new ApiError(400, "All field are required");
     }
-    console.log(req.user._id)
 
     const playlist = await Playlist.create({
         name,
         description,
+        owner: req.user._id
 
     });
 
