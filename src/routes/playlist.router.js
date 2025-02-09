@@ -5,6 +5,7 @@ import { upload } from "../middlewares/multer.middleware.js";
 import { 
     creatPlayList,
     getUserPlayLists,
+    getPlaylistById,
  } from "../controllers/playlist.controller.js";
 
  const router = Router();
@@ -17,6 +18,9 @@ import {
     creatPlayList
 );
 
-router.route("/:userId").get( getUserPlayLists)
+router.route("/user/:userId").get( getUserPlayLists);
+
+router.route("/:playlistId").get(getPlaylistById);
+
 
  export default router;

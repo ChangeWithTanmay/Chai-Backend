@@ -42,7 +42,7 @@ const getUserPlayLists = asyncHandeler(async (req, res) => {
   }
 
   // ## Write aggregation Pipeline
-  const userPlaylist = await Playlist.aggregate([
+  const userPlaylists = await Playlist.aggregate([
     {
       $match: {
         owner: new mongoose.Types.ObjectId(userId),
@@ -59,7 +59,7 @@ const getUserPlayLists = asyncHandeler(async (req, res) => {
     },
   ]);
 
-  if (!userPlaylist) {
+  if (!userPlaylists) {
     throw new ApiError(404, "No Have User Id");
   }
 
@@ -67,14 +67,44 @@ const getUserPlayLists = asyncHandeler(async (req, res) => {
     new ApiResponse(
       200,
       {
-        userPlaylist,
+        userPlaylists,
       },
       "User Playlistfind Successfully.."
     )
   );
 });
 
+
+// # << GET PLAYLIST BY ID>>
+
+const getPlaylistById = asyncHandeler(async (req, res) => {
+  //TODO: get playlist by id
+  const { playlistId } = req.params;
+  if (!playlistId) {
+    throw new ApiError(503, "Data is not come, Invalid Playlist ID");
+  }
+  
+  // Find _id from Playlist Database.
+  const getPlayList = await Playlist.findById(playlistId);
+  if (!getPlayList) {
+    throw new ApiError(403, "No have, This Playlist  not exist..");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        getPlayList,
+      },
+      "Playlist find successfully.."
+    )
+  );
+});
+
+
+
 export { 
     creatPlayList, 
-    getUserPlayLists 
-};
+    getUserPlayLists,
+    getPlaylistById,
+ };
