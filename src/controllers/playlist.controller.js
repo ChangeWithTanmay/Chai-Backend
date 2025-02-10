@@ -123,7 +123,20 @@ const addVideoToPlaylist = asyncHandeler(async (req, res) => {
         throw new ApiError(404, "Playlist Id doesnot exist.");
     }
 
-    
+    // Playlist Have Video
+    console.log(varifyPlaylist);
+
+    const playlistAllVideo = varifyPlaylist.videos.map(
+        (id) => {
+            id.toString() === varifyVideoID?._id.toString()
+        }
+    )
+
+    if (playlistAllVideo) {
+        throw new ApiError(400, "Video Id is already exist..");
+    }
+
+    // updatePlaylist in DB.
 
     const updatePlaylist = await Playlist.findByIdAndUpdate(
         playlistId,
