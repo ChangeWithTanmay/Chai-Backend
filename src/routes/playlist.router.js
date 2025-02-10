@@ -7,6 +7,7 @@ import {
     getUserPlayLists,
     getPlaylistById,
     addVideoToPlaylist,
+    removeVideoToPlaylist,
  } from "../controllers/playlist.controller.js";
 
  const router = Router();
@@ -23,5 +24,6 @@ router.route("/user/:userId").get( getUserPlayLists);
 
 router.route("/:playlistId").get(getPlaylistById);
 router.route("/add/:videoId/:playlistId").patch(addVideoToPlaylist);
+router.route("/remove/:videoId/:playlistId").patch(removeVideoToPlaylist);
 
  export default router;

@@ -124,12 +124,12 @@ const addVideoToPlaylist = asyncHandeler(async (req, res) => {
 
     const playlistAllVideo = varifyPlaylist.videos.map(
         (id) => {
-            if(id.toString() === varifyVideoID?._id.toString()){
+            if (id.toString() === varifyVideoID?._id.toString()) {
                 throw new ApiError(400, "Video Id is already exist..");
             }
         }
     )
-    
+
 
 
     // updatePlaylist in DB.
@@ -166,13 +166,72 @@ const addVideoToPlaylist = asyncHandeler(async (req, res) => {
 
 
 // Remove Video form Playlist
-const removeVideoToPlaylist = asyncHandeler(async(req, res) =>{
+const removeVideoToPlaylist = asyncHandeler(async (req, res) => {
+    const { playlistId, videoId } = req.params;
 
+    if (!playlistId || !videoId) {
+        throw new ApiError(400, "PlaylistId & video is required.");
+    }
+
+    // varify Video ID
+    const varifyVideoID = await Video.findById(videoId);
+    if (!varifyVideoID) {
+        throw new ApiError(404, "Video doesnot exist.");
+    }
+
+    // varify Playlist
+    const varifyPlaylist = await Playlist.findById(playlistId);
+    if (!varifyPlaylist) {
+        throw new ApiError(404, "Playlist Id doesnot exist.");
+    }
+
+    // Playlist Have Video
+
+    const playlistAllVideo = varifyPlaylist.videos.map(
+        (id) => {
+            if (id.toString() ==! varifyVideoID?._id.toString()) {
+                throw new ApiError(400, "Video Id is not exist..");
+            }
+        }
+    )
+
+
+
+    // Delete video in Aggrigaation pipeline.
+    const deletedVideoInPlaylist = await Playlist.findByIdAndUpdate(
+        playlistId,
+        {
+            $pull: {
+                videos: videoId
+            }
+        },
+        { new: true }
+    );
+    if (!deletedVideoInPlaylist) {
+        throw new ApiError(500, "Database error: Failed to video upload data.")
+    }
+
+    // Return 
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                playlist: deletedVideoInPlaylist,
+            },
+            "Playlist to delete video successfully.."
+        )
+    )
 })
+
+
+
 
 export {
     creatPlayList,
     getUserPlayLists,
     getPlaylistById,
     addVideoToPlaylist,
+    removeVideoToPlaylist,
 };
