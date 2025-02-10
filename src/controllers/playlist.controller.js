@@ -105,9 +105,6 @@ const getPlaylistById = asyncHandeler(async (req, res) => {
 const addVideoToPlaylist = asyncHandeler(async (req, res) => {
     const { playlistId, videoId } = req.params;
 
-    console.log("VideoId :", videoId)// videoId: 67a2ee6a1a9a883b5d3c4337
-    console.log("playlistId :", playlistId)// playlistId: 67a88c9cb202c86318f82a70
-
     if (!playlistId || !videoId) {
         throw new ApiError(400, "PlaylistId & video is required.");
     }
@@ -124,17 +121,16 @@ const addVideoToPlaylist = asyncHandeler(async (req, res) => {
     }
 
     // Playlist Have Video
-    console.log(varifyPlaylist);
 
     const playlistAllVideo = varifyPlaylist.videos.map(
         (id) => {
-            id.toString() === varifyVideoID?._id.toString()
+            if(id.toString() === varifyVideoID?._id.toString()){
+                throw new ApiError(400, "Video Id is already exist..");
+            }
         }
     )
+    
 
-    if (playlistAllVideo) {
-        throw new ApiError(400, "Video Id is already exist..");
-    }
 
     // updatePlaylist in DB.
 
@@ -167,6 +163,12 @@ const addVideoToPlaylist = asyncHandeler(async (req, res) => {
             )
         );
 });
+
+
+// Remove Video form Playlist
+const removeVideoToPlaylist = asyncHandeler(async(req, res) =>{
+
+})
 
 export {
     creatPlayList,
