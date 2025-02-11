@@ -189,7 +189,7 @@ const removeVideoToPlaylist = asyncHandeler(async (req, res) => {
 
     const playlistAllVideo = varifyPlaylist.videos.map(
         (id) => {
-            if (id.toString() ==! varifyVideoID?._id.toString()) {
+            if (id.toString() !== varifyVideoID?._id.toString()) {
                 throw new ApiError(400, "Video Id is not exist..");
             }
         }
@@ -226,7 +226,93 @@ const removeVideoToPlaylist = asyncHandeler(async (req, res) => {
 })
 
 
+// Delete Playlist
+const deletePlaylist = asyncHandeler( async(req,res)=> {
+    const {playlistId}=req.params;
+    if(!playlistId){
+        throw new ApiError(400, "Playlist is not found.");
+    }
 
+    // find playlist have in Playlist Schema.
+    const varifyPlaylist = await Playlist.findById(playlistId);
+    if (!varifyPlaylist) {
+        throw new ApiError(404, "Playlist Id doesnot exist.");
+    }
+    console.log("Varify Playlist:", varifyPlaylist?.owner.toString())
+    console.log("req.user Id",req.user?._id.toString())
+    // if playlist owner and req.user._id same or not.
+    if(varifyPlaylist?.owner.toString() !== req.user?._id.toString()){
+        throw new ApiError(401, "Unathorize Access, You cannot be deleted."); 
+    }
+
+    // Delete value
+    const playlistDelete = await Playlist.findByIdAndDelete(playlistId)
+    if(!playlistDelete){
+        throw new ApiError(500,  "Database Error: Failed to video upload data.")
+    }
+
+    // Return
+    return res
+    .status(200)
+    .json(
+        200,
+        "Playlist deleted successfully.."
+    )
+})
+
+
+// Updated Playlist
+const updatePlaylist = asyncHandeler( async(req, res) => {
+    const {name, description} = req.body;
+    const { playlistId } = req.params;
+
+    if(!name || !description){
+        throw new ApiError(400,"name & Playlist is require..")
+    }
+
+    // find playlist have in Playlist Schema.
+    const varifyPlaylist = await Playlist.findById(playlistId);
+    if (!varifyPlaylist) {
+        throw new ApiError(404, "Playlist Id doesnot exist.");
+    }
+
+    // if playlist owner and req.user._id same or not.
+    if(varifyPlaylist?.owner.toString() !== req.user?._id.toString()){
+        throw new ApiError(401, "Unathorize Access, You can't deleted."); 
+    }
+
+    const updatedPlaylist = await Playlist.findByIdAndUpdate(
+        playlistId,
+        {
+            $set:{
+                name,
+                description
+            }
+        },
+        {
+            new: true
+        }
+        
+    )
+
+    if(!updatedPlaylist){
+        throw new ApiError(500, "Playlist is not Exist || Database Server error");
+    }
+
+    // return
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                playlist: updatedPlaylist
+            },
+            "Playlist Updated Successfully.."
+        )
+    )
+    
+})
 
 export {
     creatPlayList,
@@ -234,4 +320,6 @@ export {
     getPlaylistById,
     addVideoToPlaylist,
     removeVideoToPlaylist,
+    deletePlaylist,
+    updatePlaylist,
 };
