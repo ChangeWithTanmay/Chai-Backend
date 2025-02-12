@@ -38,7 +38,8 @@ const addTweet = asyncHandeler(async (req, res) => {
 
 // 2. now User All Tweets
 const nowUserAllTweets = asyncHandeler(async (req, res) => {
-    const userId = req.body._id;
+    const userId = req.user?._id;
+
     if (!userId) {
         throw new ApiError(400, "You are not not Loging || Plase Login again")
     }
@@ -46,7 +47,14 @@ const nowUserAllTweets = asyncHandeler(async (req, res) => {
     const tweet = await Tweet.aggregate([
         {
             $match: {
-                owner: new mongoose.Types.ObjectId(req.body?._id)
+                owner: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                owner: 1,
+                content: 1,
             }
         }
     ])
@@ -57,26 +65,37 @@ const nowUserAllTweets = asyncHandeler(async (req, res) => {
 
     return res
         .status(200)
-        .json(200,
-            {
-                tweets: tweet
-            },
-            "Tweets comming Successfully.."
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    tweets: tweet
+                },
+                "Tweets comming Successfully.."
+            )
         )
 });
 
 
+
 // 3. Id to find user All Tweets
 const userIdToAllTweets = asyncHandeler(async (req, res) => {
-    const userId = req.params;
+    const { userId } = req.params;
     if (!userId) {
-        throw new ApiError(400, "You are not not Loging || Plase Login again")
+        throw new ApiError(400, "You are not provide userId, plase check your link");
     }
 
     const tweet = await Tweet.aggregate([
         {
             $match: {
-                owner: new mongoose.Types.ObjectId(req.body?._id)
+                owner: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                owner: 1,
+                content: 1,
             }
         }
     ])
@@ -88,17 +107,20 @@ const userIdToAllTweets = asyncHandeler(async (req, res) => {
     return res
         .status(200)
         .json(200,
-            {
-                tweets: tweet
-            },
-            "Tweets comming Successfully.."
+            new ApiResponse(
+                200,
+                {
+                    tweets: tweet
+                },
+                "Tweets comming Successfully.."
+            )
         )
 });
 
 
 // 4. Update Tweet
 const updateTweet = asyncHandeler(async (req, res) => {
-    const tweetId = req.params;
+    const {tweetId} = req.params;
     const { content } = req.body;
 
     if (!tweetId) {
@@ -109,15 +131,17 @@ const updateTweet = asyncHandeler(async (req, res) => {
         throw new ApiError(400, "Invalid content, please enter content..");
     }
 
-    const varifyTweet = await Playlist.findById(tweetId);
+    const varifyTweet = await Tweet.findById(tweetId);
     if (!varifyTweet) {
         throw new ApiError(404, "Tweet Id doesnot exist.");
     }
+
 
     // if playlist owner and req.user._id same or not.
     if (varifyTweet?.owner.toString() !== req.user?._id.toString()) {
         throw new ApiError(401, "Unathorize Access, You cannot be deleted.");
     }
+
 
     // Update in DB.
     const tweet = await Tweet.findByIdAndUpdate(
@@ -130,30 +154,34 @@ const updateTweet = asyncHandeler(async (req, res) => {
         { new: true }
     );
 
+
     if (!tweet) {
         throw new ApiError(500, "Tweets is not updated.");
     }
 
     return res
         .status(200)
-        .json(200,
-            {
-                tweet
-            },
-            "Tweet updated Successfully.."
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    tweet
+                },
+                "Tweet updated Successfully.."
+            )
         )
 });
 
 
 // 5. Delete Tweet
 const deleteTweet = asyncHandeler(async (req, res) => {
-    const tweetId = req.params;
+    const {tweetId} = req.params;
     if (!tweetId) {
         throw new ApiError(400, "You are not not Loging || Plase Login again")
     }
 
     // check tweetId is valid or not
-    const varifyTweet = await Playlist.findById(tweetId);
+    const varifyTweet = await Tweet.findById(tweetId);
     if (!varifyTweet) {
         throw new ApiError(404, "Tweet Id doesnot exist.");
     }
