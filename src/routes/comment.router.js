@@ -4,6 +4,8 @@ import { upload } from "../middlewares/multer.middleware.js";
 
 import {
     createNewComment,
+    updateComment,
+    deleteComment,
 } from "../controllers/comment.controller.js";
 
 
@@ -16,5 +18,11 @@ router.route("/:videoId").post(
     createNewComment
 )
 
+router.route("/:commentId")
+.patch(
+    upload.none(),
+    updateComment
+)
+.delete(deleteComment)
 
 export default router;

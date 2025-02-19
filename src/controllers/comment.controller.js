@@ -4,7 +4,6 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Video } from "../models/video.model.js";
 
-
 // ## Create New Comment
 
 const createNewComment = asyncHandeler(async (req, res) => {
@@ -52,7 +51,110 @@ const createNewComment = asyncHandeler(async (req, res) => {
   );
 });
 
+// ## Update Comment
+const updateComment = asyncHandeler(async (req, res) => {
+  const { commentId } = req.params;
+  const { content } = req.body;
+
+  if (!content || !commentId) {
+    throw new ApiError(400, "Content & Comment value is required.");
+  }
+
+  // Comment is valid or not
+  const isvalidComment = await Comment.findById(commentId);
+  if (!isvalidComment) {
+    throw new ApiError(404, "Video is not found.");
+  }
+
+  // Check Comment owner same than Update.
+  if (req.user._id.toString() !== isvalidComment.owner.toString()) {
+    throw new ApiError(404, "Do not Update, this Comment.");
+  }
+
+  const comment = await Comment.findByIdAndUpdate(
+    isvalidComment._id.toString(),
+    {
+      $set: {
+        content,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  if (!comment) {
+    throw new ApiError(500, "DataBase Error | Please try again.");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        comment,
+      },
+      "Video comment Successfully Update."
+    )
+  );
+});
+
+// ## Delete Comment
+
+const deleteComment = asyncHandeler(async (req, res) => {
+  const { commentId } = req.params;
+  if (!commentId) {
+    throw new ApiError(400, "Feild is required please check Request URL");
+  }
+
+  // Comment is valid or not
+  const isvalidComment = await Comment.findById(commentId);
+  if (!isvalidComment) {
+    throw new ApiError(404, "Video is not found.");
+  }
+
+  // findout Video owner
+  const video = await Video.findById(isvalidComment.video);
+  if (!video) {
+    throw new ApiError(404, "Invalid Video");
+  }
+
+  // Check Login user and comment owner is same & not || Login user and video owner is Same & not.
+  if (
+    req.user._id.toString() !== isvalidComment.owner.toString() ||
+    req.user._id.toString() !== video.owner.toString()
+  ) {
+    throw new ApiError(
+      403,
+      "You can't be deleted, You are not video owner || comment owner"
+    );
+  }
+
+  // Now Delete.
+  const delComment = await Comment.findByIdAndDelete(
+    isvalidComment._id.toString(),
+    { new: true }
+  );
+
+  if (!delComment) {
+    throw new ApiError(500, "delComment Not be deleted.");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        result: delComment,
+      },
+      "Comment Deleted Successfully"
+    )
+  );
+});
+
+
+
 
 export { 
-    createNewComment,
- };
+    createNewComment, 
+    updateComment, 
+    deleteComment,
+};
