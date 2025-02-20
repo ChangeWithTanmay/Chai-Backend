@@ -36,20 +36,30 @@ const getAllComment = asyncHandeler(async (req, res) => {
             }
         }
     ])
-    .skip((page -1)* limit)
-    .limit(parseInt(limit))
+        .skip((page - 1) * limit)
+        .limit(parseInt(limit));
+
+    const totalComment = await Comment.aggregate([
+        {
+            $match: {
+                video: new mongoose.Types.ObjectId(videoId)
+            }
+        }
+    ]);
+    console.log(totalComment.length)
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(
-            200,
-            {
-                comment: videoComments,
-            },
-            "Comments retrieved successfully"
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    comment: videoComments,
+                    totalComment:totalComment.totalComments
+                },
+                "Comments retrieved successfully"
+            )
         )
-    )
 });
 
 // ## Create New Comment
