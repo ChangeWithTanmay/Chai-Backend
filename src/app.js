@@ -24,6 +24,7 @@ import playlistRouter from "./routes/playlist.router.js";
 import tweetRouter from "./routes/tweet.router.js";
 import commentRouter from "./routes/comment.router.js";
 import likeRouter from "./routes/like.router.js";
+import patientRouter from "./saas/routers/patient.router.js"
 
 // routes declaration
 app.use("/api/v1/users", userRouter);
@@ -32,6 +33,7 @@ app.use("/api/v1/playlist", playlistRouter);
 app.use("/api/v1/tweet", tweetRouter);
 app.use("/api/v1/comment", commentRouter);
 app.use("/api/v1/likes", likeRouter);
+app.use("/api/v1/patient", patientRouter);
 
 // http://localhost:5000/api/v1/users/register
 
